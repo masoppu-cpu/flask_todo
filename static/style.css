@@ -1,0 +1,72 @@
+/* ----------------------------
+   ページ全体の基本スタイル
+----------------------------- */
+body {
+  font-family: sans-serif;           /* 全体のフォントを設定 */
+  background-color: #f9f9f9;         /* 背景色を明るいグレーに */
+  padding: 30px;                     /* ページの余白 */
+  color: #333;                       /* 文字の色 */
+}
+
+/* タイトルの中央寄せ */
+h1 {
+  text-align: center;
+}
+
+/* ----------------------------
+   タスク入力フォームのスタイル
+----------------------------- */
+.task-form {
+  display: flex;                     /* 横並びにする（自動で折り返す） */
+  flex-wrap: wrap;                  /* 小さい画面では改行して表示 */
+  gap: 10px;                         /* 各項目の間隔 */
+  margin-bottom: 20px;              /* テーブルとの間に余白 */
+  justify-content: center;          /* 中央揃え */
+}
+
+/* フォームの入力項目の共通スタイル */
+.task-form input,
+.task-form select,
+.task-form textarea {
+  padding: 8px;                      /* 内側の余白 */
+  font-size: 14px;                   /* 文字サイズ */
+  border: 1px solid #ccc;           /* 枠線 */
+  border-radius: 4px;               /* 角を丸める */
+}
+
+/* 登録ボタンのスタイル */
+#add-task-btn {
+  padding: 8px 15px;
+  background-color: #007bff;        /* 青色 */
+  color: white;                     /* 文字は白 */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;                  /* ホバー時にポインターに変化 */
+}
+
+/* ----------------------------
+   タスク表示テーブルのスタイル
+----------------------------- */
+table {
+  width: 100%;                      /* 幅いっぱいに広げる */
+  border-collapse: collapse;        /* 枠線の間のスペースを消す */
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* 少し影をつけて立体感 */
+}
+
+/* テーブルの見出し・セルの共通スタイル */
+th, td {
+  padding: 10px;
+  border: 1px solid #ddd;          /* 枠線の色 */
+  text-align: center;
+}
+
+/* 編集ボタンのスタイル */
+.edit-btn {
+  padding: 5px 10px;
+  background-color: #ffc107;        /* オレンジ系 */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
