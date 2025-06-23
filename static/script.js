@@ -184,3 +184,4 @@ document.getElementById("task-form").addEventListener("submit",function(e){
       }); //catchの終
     }); //Eventlisnerの終
   } //functionの終
+  //git更新確認
