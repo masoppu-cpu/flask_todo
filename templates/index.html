@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>簡易ToDoアプリ</title>
+  <!-- CSSファイルを読み込む -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- アプリのタイトル -->
+  <h1>タスク管理</h1>
+
+  <!-- ▼ タスクを登録するためのフォーム -->
+  <form id="task-form" class="task-form">
+    <!-- タスク名を入力 -->
+    <input type="text" id="task-name" placeholder="タスク名" required>
+
+    <!-- タスクの締切日（期日）を入力 -->
+    <input type="date" id="task-deadline" required>
+
+    <!-- タスクのステータス（状態）を選ぶ -->
+    <select id="task-status" name="status">
+      {% for status in status_options %}
+        <option value="{{ status.code }}">{{ status.label }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- タスクに関するメモを自由に書ける -->
+    <textarea id="task-memo" placeholder="メモ"></textarea>
+
+    <!-- タスクを追加するためのボタン -->
+    <button type="submit" id="add-task-btn">登録</button>
+  </form>
+  <!-- ▲ タスク登録フォーム ここまで -->
+
+  <!-- ▼ 登録されたタスクを表示するテーブル -->
+  <table id="task-table">
+    <thead>
+      <tr>
+        <th>ステータス</th>         <!-- タスクステータス -->
+        <th>タスク名</th>  <!-- タスクの名前 -->
+        <th>期日</th>      <!-- 締切日 -->
+        <th>完了日</th>
+        <th>メモ</th>      <!-- タスクに関するメモ -->
+        <th>削除</th>      <!-- 編集ボタン -->
+      </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+  </table>
+  <!-- ▲ タスク表示テーブル ここまで -->
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
