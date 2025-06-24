@@ -1,4 +1,6 @@
-memo.txt
-db.py
+#仮想環境
 venv/
+
+#データベースファイル
+db.py
 _pycache_
