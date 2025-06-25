@@ -30,6 +30,8 @@ function get_tasks(){
         select.id = task.id;
         //さらにこのselectタグにCSSクラスをつける(後からいじる時にこれあると便利)
         select.classList.add("task-status");
+        //ステータスの状況に対応したCSSクラス作成
+        setStatusColorClass(select, task.statuscode);
         //fetchでとってきたstatuslistの中を開いて、プルダウンの選択肢を作る(未着手とか)
         data.statuslist.forEach((statuslist) => { 
           const option = document.createElement("option");
@@ -47,7 +49,7 @@ function get_tasks(){
         //削除ボタン作成(押したときの挙動は別で作る)
         const deleteTd = document.createElement("td");
         const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "削除";
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';  // ← アイコン付き
         //後から呼び出す用のCSSクラス設定&idの情報も紐づけてSQLで処理するときどれを消すのか迷わんようにしてる
         deleteBtn.classList.add("delete-button");
         deleteBtn.setAttribute("data-id", task.id);
@@ -136,6 +138,8 @@ document.getElementById("task-form").addEventListener("submit",function(e){
       const taskId = event.target.getAttribute("id");
       //今選択されている値(画面上は進行中とかだけど裏では00)をとってきてる
       const newStatus = event.target.value;
+      //色変更
+      setStatusColorClass(event.target, newStatus);
       //Flaskに送るぜ！の処理
       fetch(`/update-status/${taskId}`,{
         method: "POST",
@@ -184,3 +188,21 @@ document.getElementById("task-form").addEventListener("submit",function(e){
       }); //catchの終
     }); //Eventlisnerの終
   } //functionの終
+
+  //ステータスに応じて動的に色を帰る処理用のcssクラスの作成
+  function setStatusColorClass(select, statuscode){
+    //ステータスクラスを初期化
+    select.classList.remove("status-not-started", "status-in-progress", "status-completed");
+
+     // 数字でも文字でも対応（"01" or 1）
+    const code = String(statuscode).padStart(2, "0");
+
+    //ステータスのクラスを追加
+    if (code === "00") {
+        select.classList.add("status-not-started");
+    } else if (code === "01") {
+        select.classList.add("status-in-progress");
+    } else if (code === "02") {
+        select.classList.add("status-completed");
+  }
+}
