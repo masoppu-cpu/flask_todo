@@ -10,7 +10,12 @@ window.addEventListener("load", function(){
 //こんときfilterの値も関数の外から取ってくるためにローカル変数でfilterを設定
 //flaskサーバーにアクセスして、タスクデータとってきて〜っていうてる。ほんで、app.pyでとってきたtasks(json)を受け取る
 function get_tasks(filterState = {}){
-  fetch("/get_tasks")
+  //urlを分岐させる filterStateが02だった場合、完了済タスクのデータも取ってくる
+  let url = "/get_tasks";
+  if(filterState.statuses?.includes("02")){
+    url += "?include_completed=1"
+  }
+  fetch(url)
     //生のデータをjsで扱えるように変換(jsのオブジェクトに変換ともいうらしい)
     .then(response => response.json())
 
