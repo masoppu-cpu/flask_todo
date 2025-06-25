@@ -36,11 +36,21 @@
   </form>
   <!-- ▲ タスク登録フォーム ここまで -->
 
+  <!-- ▼ ステータスで絞り込み -->
+  <div class="filter-box">
+  <span>ステータスで絞り込み：</span>
+  <label><input type="checkbox" value="00" class="status-check"> 未着手</label>
+  <label><input type="checkbox" value="01" class="status-check"> 進行中</label>
+  <label><input type="checkbox" value="02" class="status-check"> 完了</label>
+  <button id="applyStatusFilter">絞り込み</button>
+</div>
+  <!-- ▲ ステータスで絞り込み -->
+   
   <!-- ▼ 登録されたタスクを表示するテーブル -->
   <table id="task-table">
     <thead>
       <tr>
-        <th>ステータス</th>         <!-- タスクステータス -->
+        <th>ステータス</th>   <!-- タスクステータス -->
         <th>タスク名</th>  <!-- タスクの名前 -->
         <th>期日</th>      <!-- 締切日 -->
         <th>完了日</th>
