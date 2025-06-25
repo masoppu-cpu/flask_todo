@@ -32,12 +32,23 @@ def get_tasks():
         # 接続を通じて命令を出してくれる人（作業員）」を用意=カーソル作成
         cur = conn.cursor()
         
+        #分岐(未着手/進行中のみverと完了済みも含むver)ULRの?以前が一致してたらこの処理走る
+        #変数の箱にURLの?以降のパラメータを入れる
+        include_completed = request.args.get("include_completed") #
+        if include_completed == "1":
+            sql = """
+                SELECT * FROM tasks
+                LEFT JOIN statusnumber ON status = code
+                WHERE is_deleted = '0';
+            """
+        else:
+            sql = """
+                SELECT * FROM tasks
+                LEFT JOIN statusnumber ON status = code
+                WHERE is_deleted = '0' AND status IN('00', '01');
+            """
         #取得したデータをリストでまとめる
-        cur.execute("""
-            SELECT * FROM tasks 
-            LEFT JOIN statusnumber ON status = code 
-            WHERE is_deleted = '0' AND status IN('00', '01');
-            """)
+        cur.execute(sql)
         rows = cur.fetchall()
 
         #使い終わったカーソル(作業員)と接続を切る
