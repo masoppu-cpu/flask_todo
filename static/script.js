@@ -1,14 +1,32 @@
+//グローバル関数
+let currentFilter = {};
+
+//初期化
 window.addEventListener("load", function(){
   get_tasks()
 })
 
 //DBにあるタスクのデータを取ってきて表示する
+//こんときfilterの値も関数の外から取ってくるためにローカル変数でfilterを設定
 //flaskサーバーにアクセスして、タスクデータとってきて〜っていうてる。ほんで、app.pyでとってきたtasks(json)を受け取る
-function get_tasks(){
+function get_tasks(filterState = {}){
   fetch("/get_tasks")
     //生のデータをjsで扱えるように変換(jsのオブジェクトに変換ともいうらしい)
     .then(response => response.json())
 
+    //データにフィルターをかける
+    .then(data =>{
+      //フィルターボタンを押した時にfilterに引数が渡されてるはず それがなければゼロ
+      //もしstatusesの箱の中に数字があったら見に行く、見に行ってなんか数字入ってたら{}内の処理する
+      //?がなかったらstatusesの中が何にもなかった時にエラーなる
+      if (filterState.statuses?.length) {
+        //もとのデータに対してfilterをかける(filterはメソッド)
+        data.tasks = data.tasks.filter(
+        //taskってのが一個一個のデータの中のまとまりを見ていくメソッド。条件に合えば残す
+          task => filterState.statuses.includes(task.statuscode));
+      }
+      return data;
+    })
     //htmlのtbodyって箱を見つけてきて、それをtbodyって変数にいれてる
     //getElementByIdじゃない理由は、tbodyっていう特定の場所を呼びだしたいから
     .then(data => {
@@ -83,7 +101,6 @@ function get_tasks(){
 }
 //タスクの登録ボタンが押された時に、そのデータをflaskサーバーに送る処理
 //fetchで送る前にその送るための情報を受け取って整える作業がいる
-
 //task-fornってIDから情報とってきて欲しい、それはsubmitってイベントが発生した時のみ。ページのリロードもしないように設定（じゃないとfetchの処理の途中でロードはいっちゃうから)
 document.getElementById("task-form").addEventListener("submit",function(e){
   e.preventDefault();
@@ -128,81 +145,98 @@ document.getElementById("task-form").addEventListener("submit",function(e){
   });
   });
 
-  //ユーザーがタスクのテーブルのステータスの状態を変更したら送られる処理
-  //HTML内のtbodyを探し、その中でchangeイベントが起こったら以下の処理するよ
-  document.querySelector("tbody").addEventListener("change", (event) => {
-  //tasuk-statusって名前をつけたセレクトボタンん胃発生したeventだけに反応して欲しい
-    if(event.target.classList.contains("task-status")){
-      const tr = event.target.closest("tr");
-      //イベントターゲットつまり、今回変更を加えられたデータのIDをとりに行っている
-      const taskId = event.target.getAttribute("id");
-      //今選択されている値(画面上は進行中とかだけど裏では00)をとってきてる
-      const newStatus = event.target.value;
-      //色変更
-      setStatusColorClass(event.target, newStatus);
-      //Flaskに送るぜ！の処理
-      fetch(`/update-status/${taskId}`,{
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({statuscode:newStatus}),
-      }) //fetchの終
-      //fetchの送信がうまく行ったかチェック
-      .then(response => {
-        if(!response.ok) {
-          throw new Error("サーバーエラーが発生しました");
-        }
-        return response.json();
+//▼---フィルター機能：ステータス---▼
+function handleFilterApply() {
+  //checkedって箱作る
+  //querySelectorでhtml上でチェックが入っているものを探してる
+  //探してきたデータがNodelistってオブジェクトになってる(html側で未着手=value0とかでで数字も一緒に連れてきてる)
+  //「...」でNodelistのデータを展開して配列に変換してる次の処理ができる
+  const checked = [...document.querySelectorAll(".status-check:checked")]
+  //配列の中からvalue(ステータスコード)だけを抽出して、statusesって箱に入れてる
+  .map(cb => cb.value);
+  currentFilter = {statuses: checked };
+  get_tasks(currentFilter);
+}
+
+//フィルターの確認ボタンが押された時に関数が走る
+document.getElementById("applyStatusFilter").addEventListener("click", handleFilterApply);
+//▲---フィルター機能：ステータス---▲
+
+//ユーザーがタスクのテーブルのステータスの状態を変更したら送られる処理
+//HTML内のtbodyを探し、その中でchangeイベントが起こったら以下の処理するよ
+document.querySelector("tbody").addEventListener("change", (event) => {
+//tasuk-statusって名前をつけたセレクトボタンん胃発生したeventだけに反応して欲しい
+  if(event.target.classList.contains("task-status")){
+    const tr = event.target.closest("tr");
+    //イベントターゲットつまり、今回変更を加えられたデータのIDをとりに行っている
+    const taskId = event.target.getAttribute("id");
+    //今選択されている値(画面上は進行中とかだけど裏では00)をとってきてる
+    const newStatus = event.target.value;
+    //色変更
+    setStatusColorClass(event.target, newStatus);
+    //Flaskに送るぜ！の処理
+    fetch(`/update-status/${taskId}`,{
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({statuscode:newStatus}),
+    }) //fetchの終
+    //fetchの送信がうまく行ったかチェック
+    .then(response => {
+      if(!response.ok) {
+        throw new Error("サーバーエラーが発生しました");
+      }
+      return response.json();
+    }) //then1の終
+    .then(data => {
+      console.log("登録成功:", data.message || "OK");
+      //ステータスが完了のものをテーブルから削除
+      if(newStatus === "02") {
+        tr.remove();
+      }
+    }) //then2の終
+    .catch(error =>{
+      console.error("更新失敗", error);
+      alert("ステータスの更新に失敗しました");
+    }); //catchの終
+  };//ifの終
+});//addEventLisnerの終
+
+//削除ボタンが押されたときの処理
+function setDeleteHandler(buttonElement){
+  buttonElement.addEventListener("click", () => {
+    //削除ボタン作った時に紐付けといたidを確認しに行ってる
+    const taskId = buttonElement.getAttribute("data-id");
+    //削除がキャンセルされたときの処理 confirmがfalse=キャンセル true=イエス falseのときはreturnで処理止まる
+    if(!confirm("本当に削除しますか？")) return;
+    //confirmがtrueの時の処理
+    fetch(`/delete-task/${taskId}`,{
+      method: "DELETE",
+    }) //Fetchの終
+      .then((res) => {
+        if(!res.ok) throw new Error("削除失敗"); //サーバーからのレスがok以外ならエラーだす
+        get_tasks(currentFilter); //サーバーからのレスがyesならタスクを再取得
       }) //then1の終
-      .then(data => {
-        console.log("登録成功:", data.message || "OK");
-        //ステータスが完了のものをテーブルから削除
-        if(newStatus === "02") {
-          tr.remove();
-        }
-      }) //then2の終
-      .catch(error =>{
-        console.error("更新失敗", error);
-        alert("ステータスの更新に失敗しました");
-      }); //catchの終
-    };//ifの終
-  });//addEventLisnerの終
+    .catch((err) => {
+      console.error("削除エラー:", err);
+      alert("タスクの削除に失敗しました");
+    }); //catchの終
+  }); //Eventlisnerの終
+} //functionの終
 
-  //削除ボタンが押されたときの処理
-  function setDeleteHandler(buttonElement){
-    buttonElement.addEventListener("click", () => {
-      //削除ボタン作った時に紐付けといたidを確認しに行ってる
-      const taskId = buttonElement.getAttribute("data-id");
-      //削除がキャンセルされたときの処理 confirmがfalse=キャンセル true=イエス falseのときはreturnで処理止まる
-      if(!confirm("本当に削除しますか？")) return;
-      //confirmがtrueの時の処理
-      fetch(`/delete-task/${taskId}`,{
-        method: "DELETE",
-      }) //Fetchの終
-        .then((res) => {
-          if(!res.ok) throw new Error("削除失敗"); //サーバーからのレスがok以外ならエラーだす
-          buttonElement.closest("tr").remove(); //サーバーからのレスがyesならボタンが属してるtr(行)を丸ごと削除
-        }) //then1の終
-      .catch((err) => {
-        console.error("削除エラー:", err);
-        alert("タスクの削除に失敗しました");
-      }); //catchの終
-    }); //Eventlisnerの終
-  } //functionの終
+//ステータスに応じて動的に色を帰る処理用のcssクラスの作成
+function setStatusColorClass(select, statuscode){
+  //ステータスクラスを初期化
+  select.classList.remove("status-not-started", "status-in-progress", "status-completed");
 
-  //ステータスに応じて動的に色を帰る処理用のcssクラスの作成
-  function setStatusColorClass(select, statuscode){
-    //ステータスクラスを初期化
-    select.classList.remove("status-not-started", "status-in-progress", "status-completed");
+    // 数字でも文字でも対応（"01" or 1）
+  const code = String(statuscode).padStart(2, "0");
 
-     // 数字でも文字でも対応（"01" or 1）
-    const code = String(statuscode).padStart(2, "0");
-
-    //ステータスのクラスを追加
-    if (code === "00") {
-        select.classList.add("status-not-started");
-    } else if (code === "01") {
-        select.classList.add("status-in-progress");
-    } else if (code === "02") {
-        select.classList.add("status-completed");
-  }
+  //ステータスのクラスを追加
+  if (code === "00") {
+      select.classList.add("status-not-started");
+  } else if (code === "01") {
+      select.classList.add("status-in-progress");
+  } else if (code === "02") {
+      select.classList.add("status-completed");
+}
 }
