@@ -5,8 +5,9 @@ let currentFilter = {};
 window.addEventListener("DOMContentLoaded", async () => {
   try {
     // get_tasks() は async 関数 → Promise を返す
-    const data = await get_tasks(/* 必要なら引数 */);
-    renderTasks(data);
+    const currentFilter = {};
+    const result = await get_tasks(currentFilter);
+    renderTasks(result);
   } catch (err) {
     console.error("タスク取得失敗:", err);
   }
@@ -37,9 +38,10 @@ async function get_tasks(filterState = {}){
 }
 //タスクを表示する
 function renderTasks(data){
+  const tasks = data.tasks;
+  const statuslist = data.statuslist; 
   //htmlのtbodyって箱を見つけてきて、それをtbodyって変数にいれてる
   //getElementByIdじゃない理由は、tbodyっていう特定の場所を呼びだしたいから
-  const tasks = data.tasks
   const tbody = document.querySelector("#task-table tbody");
   //trを削除して初期化
   while (tbody.firstChild) {
@@ -260,11 +262,40 @@ function applySort(){
 }
 
 //表示されてるタスクにソートをかける機能
-function sortTasks(sortKey, order = 'asc'){
-  //get_tasuks関数を呼んで、そのデータを並べ替える
-  const tasks = get_tasks();
-  //ステータス照準で並び替えられるようにする
- 
+function sortTasks(){
+  //処理のための材料をHTMLから受け取る下準備
+  const sortKey = document.getElementById("sortKey").value;
+  const sortOrder = document.getElementById("sortOrder").value;
+
+  get_tasks().then(result => {
+    console.log(result)
+    //sortはデータの中身を一個一個比較して並び替える()内のaとbで。
+    // そのabをtasksの中から取り出すときに何をキーにして探すのか指定してる。
+    const tasks = result.tasks;  //tasksの中から配列のみ取り出す
+    const statuslist = result.statuslist;
+
+    if (!Array.isArray(tasks)) {
+    console.error("tasksが配列じゃない！", tasks);
+    return;
+    }
+
+    tasks.sort((a, b) => {
+      const aValue = a[sortKey]; //const xxx = a["データベースのカラム名" = "htmlでかいたvalue"]
+      const bValue = b[sortKey];
+
+      //タスク期限がsortKeyだった場合
+      if(sortKey === 'deadline') {
+        return sortOrder == 'asc'
+          ? new Date(aValue) - new Date(bValue) //ascがtrueなら実行される 昇順
+          : new Date(bValue) - new Date(aValue) ////ascがfalseつまりdescの場合実行される
+      }
+
+      return 0; //ソートキーが不明なとき
+    }); //tasks.sortの終
+
+    renderTasks({tasks, statuslist});
+  })//get_tasks.thenの終
+} //sortTasksの終
 //ボタンが押された時に処理が走る
 document.getElementById("sortButton").addEventListener("click",sortTasks)
 //▲---ソート機能---▲
