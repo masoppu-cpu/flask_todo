@@ -189,7 +189,13 @@ document.querySelector("tbody").addEventListener("change", (event) => {
     fetch(`/update-status/${taskId}`,{
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({statuscode:newStatus}),
+      body: JSON.stringify({
+        statuscode:newStatus,
+        //ステータスが完了の場合は、完了日をデータに追加して送る
+          //...(条件) 条件がtrueの時のみ展開する
+          //toISOString タイムスタンプを取得
+        ...(newStatus === "02" && { completed_at: new Date().toISOString()})
+      }),
     }) //fetchの終
     //fetchの送信がうまく行ったかチェック
     .then(response => {
@@ -262,13 +268,17 @@ function applySort(){
 }
 
 //表示されてるタスクにソートをかける機能
-function sortTasks(){
+function sortTasks(filterState = {}){
+  //フィルタの状態をHTMLから取得
+  const checked = [...document.querySelectorAll(".status-check:checked")]
+  .map(cb => cb.value);
+  currentFilter = {statuses: checked };
+
   //処理のための材料をHTMLから受け取る下準備
   const sortKey = document.getElementById("sortKey").value;
   const sortOrder = document.getElementById("sortOrder").value;
 
-  get_tasks().then(result => {
-    console.log(result)
+  get_tasks(currentFilter).then(result => {
     //sortはデータの中身を一個一個比較して並び替える()内のaとbで。
     // そのabをtasksの中から取り出すときに何をキーにして探すのか指定してる。
     const tasks = result.tasks;  //tasksの中から配列のみ取り出す
