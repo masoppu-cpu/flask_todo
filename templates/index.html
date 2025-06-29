@@ -45,7 +45,22 @@
   <button id="applyStatusFilter">絞り込み</button>
 </div>
   <!-- ▲ ステータスで絞り込み -->
-   
+  
+<!-- ▼ 並び替え条件ドロップダウン -->
+<div>
+  <label>並び替え：</label>
+  <select id="sortKey">
+    <option value="deadline">期日</option>
+  </select>
+  <select id="sortOrder">
+    <option value="asc">昇順</option>
+    <option value="desc">降順</option>
+  </select>
+  <button id="sortButton">並び替え実行</button>
+</div>
+<!-- ▲並び替え条件ドロップダウン -->
+
+
   <!-- ▼ 登録されたタスクを表示するテーブル -->
   <table id="task-table">
     <thead>
