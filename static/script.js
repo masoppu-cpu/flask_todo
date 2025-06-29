@@ -309,3 +309,45 @@ function sortTasks(filterState = {}){
 //ボタンが押された時に処理が走る
 document.getElementById("sortButton").addEventListener("click",sortTasks)
 //▲---ソート機能---▲
+
+//▼---CSVエクスポート機能---▼
+function exportTableToCSV(filename) {
+  const table = document.getElementById("task-table");
+  //テーブルからデータを抽出して、jsで処理しやすい配列に変換
+    //Array：NodeListを配列に変える
+    //querySelectorAll：tableにある要素をNodelistに変換する
+  const rows = Array.from(table.querySelectorAll("tr"));
+
+  //テーブルの全行をループ→セルずつテキストを取り出し→CSV形式の文字列に変換する
+    //配列.map(（要素） => { return 加工して返すもの })
+  const csv = rows.map(row => {
+    //1行取ってきてるので、行の中のセルと見出しを配列にしてる
+    const cols = Array.from(row.querySelectorAll("th, td"));
+    //配列化したセルを加工
+      //cell.innerText：セル要素の中のテキストだけを抽出（=</td> とかのタグを取り出さない）
+      //replace:(もし"があったら,""にして)
+      //join()処理した配列の間にいれる
+      //`$： " + セルの中のテキスト + " = "タスク名"
+    return cols.map(cell => `"${cell.innerText.replace(/"/g, '""')}"`).join(",")
+  }).join("\n"); //すべてのセルを処理終わったら改行
+
+  //CSV文字列をファイルとしてダウンロード可能な状態に変換
+    //Blob：[変換前データ].{変換後データ}
+    //\uFEFFとcsvをくっつけて、文字化け防止(日本語の場合これがないと文字化けしやすい)
+    //type：このデータがなんのファイル？ charaset：文字コード
+  const blob = new Blob(["\uFEFF" + csv], { type: "tex/csv;charset=utf-8;"});
+  
+  //CSVファイルを一時的にダウンロードリンクに変換
+    //webサーバーのメモリ内にあるファイルのアドレスを作る=一時的なローカルURL
+  const url = URL.createObjectURL(blob);
+
+  //ダウンロードリンクの要素を作成
+  const a = document.createElement("a"); //<a>タグ作る
+  a.href = url; //<a>タグにhref属性を追加して、<a href="url">にしてる 何をダウンロードするのか決める
+  a.download = "tasks.csv"; //<a href="url" download = "ファイル名を指定">にしてる
+
+  document.body.appendChild(a); //一瞬だけaタグを画面に追加
+  a.click(); //jsに自動でクリックしてもらう
+  document.body.removeChild(a); //タグを削除
+}
+//▲---CSVエクスポート機能---▲
