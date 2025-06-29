@@ -119,11 +119,12 @@ def add_task():
 def status_update(task_id):
     data = request.get_json()
     new_status = data.get("statuscode")
+    completed_at = data.get("completed_at")
 
     #DB更新
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE tasks SET status = %s WHERE id =%s;", (new_status, task_id))
+    cur.execute("UPDATE tasks SET status = %s, completed_at = %s WHERE id =%s;", (new_status, completed_at, task_id))
     conn.commit()
     cur.close()
     conn.close()
