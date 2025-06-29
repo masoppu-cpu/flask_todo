@@ -2,108 +2,112 @@
 let currentFilter = {};
 
 //初期化
-window.addEventListener("load", function(){
-  get_tasks()
-})
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    // get_tasks() は async 関数 → Promise を返す
+    const data = await get_tasks(/* 必要なら引数 */);
+    renderTasks(data);
+  } catch (err) {
+    console.error("タスク取得失敗:", err);
+  }
+});
 
-//DBにあるタスクのデータを取ってきて表示する
+//DBにあるタスクのデータを取ってくる
 //こんときfilterの値も関数の外から取ってくるためにローカル変数でfilterを設定
 //flaskサーバーにアクセスして、タスクデータとってきて〜っていうてる。ほんで、app.pyでとってきたtasks(json)を受け取る
-function get_tasks(filterState = {}){
+async function get_tasks(filterState = {}){
   //urlを分岐させる filterStateが02だった場合、完了済タスクのデータも取ってくる
   let url = "/get_tasks";
   if(filterState.statuses?.includes("02")){
     url += "?include_completed=1"
   }
-  fetch(url)
-    //生のデータをjsで扱えるように変換(jsのオブジェクトに変換ともいうらしい)
-    .then(response => response.json())
-
-    //データにフィルターをかける
-    .then(data =>{
-      //フィルターボタンを押した時にfilterに引数が渡されてるはず それがなければゼロ
-      //もしstatusesの箱の中に数字があったら見に行く、見に行ってなんか数字入ってたら{}内の処理する
-      //?がなかったらstatusesの中が何にもなかった時にエラーなる
-      if (filterState.statuses?.length) {
-        //もとのデータに対してfilterをかける(filterはメソッド)
-        data.tasks = data.tasks.filter(
-        //taskってのが一個一個のデータの中のまとまりを見ていくメソッド。条件に合えば残す
-          task => filterState.statuses.includes(task.statuscode));
-      }
-      return data;
-    })
-    //htmlのtbodyって箱を見つけてきて、それをtbodyって変数にいれてる
-    //getElementByIdじゃない理由は、tbodyっていう特定の場所を呼びだしたいから
-    .then(data => {
-      // console.log(data) データの中身見たいとき
-      const tbody = document.querySelector("#task-table tbody");
-      //trを削除して初期化
-      while (tbody.firstChild) {
-        tbody.removeChild(tbody.firstChild); 
-      }
-      //みつけてきたtbodyの箱の中に新しくテーブルの中の1行を作る
-      data.tasks.forEach(task => {
-        const tr = document.createElement("tr");   
-        //中身のセル作っててセルの名前を決めてる
-        const statusTd = document.createElement("td");
-        //htmlの中にまずはセレクトタグを新しく作る
-        const select = document.createElement("select");
-        //さっき作ったselectタグにselectという名前をつけてる
-        select.name = task.id;
-        select.id = task.id;
-        //さらにこのselectタグにCSSクラスをつける(後からいじる時にこれあると便利)
-        select.classList.add("task-status");
-        //ステータスの状況に対応したCSSクラス作成
-        setStatusColorClass(select, task.statuscode);
-        //fetchでとってきたstatuslistの中を開いて、プルダウンの選択肢を作る(未着手とか)
-        data.statuslist.forEach((statuslist) => { 
-          const option = document.createElement("option");
-          option.value = statuslist.code;
-          //ユーザーに表示される文字列を設定
-          option.textContent = statuslist.label;
-          //今の状態とマスタのステータスが一致してるか
-          if (task.statuscode === statuslist.code) {
-            option.setAttribute('selected', '')
-          }
-          //selectのなかにopitionいれて、selectにtdいれてtrにtdいれてるマトリョーシカ方式
-          select.appendChild(option);
-        });
-        statusTd.appendChild(select);
-        //削除ボタン作成(押したときの挙動は別で作る)
-        const deleteTd = document.createElement("td");
-        const deleteBtn = document.createElement("button");
-        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';  // ← アイコン付き
-        //後から呼び出す用のCSSクラス設定&idの情報も紐づけてSQLで処理するときどれを消すのか迷わんようにしてる
-        deleteBtn.classList.add("delete-button");
-        deleteBtn.setAttribute("data-id", task.id);
-        //このボタンが押されたときの挙動を書いてる関数を呼ぶ
-        setDeleteHandler(deleteBtn);
-        //今作ったボタンをdeleteTdの小要素にする
-        deleteTd.appendChild(deleteBtn);
-
-        //tdを表示させたい項目だけ作ろう！
-        const nameTd = document.createElement("td")
-        nameTd.innerText = task.name
-        const deadlineTd = document.createElement("td")
-        deadlineTd.innerText = task.deadline
-        const completed_atTd = document.createElement("td")
-        completed_atTd.innerText = task.completed_at
-        const memoTd = document.createElement("td")
-        memoTd.innerText = task.memo
-        tr.appendChild(statusTd);
-        tr.appendChild(nameTd);
-        tr.appendChild(deadlineTd);
-        tr.appendChild(completed_atTd);
-        tr.appendChild(memoTd);
-        tr.appendChild(deleteTd);
-        tbody.appendChild(tr);
-      });
-  
-    })
-    .catch(error => {
-      console.error("エラー発生:", error);
-    });
+  //生のデータをjsで扱えるように変換(jsのオブジェクトに変換ともいうらしい)
+  const response = await fetch(url);
+  const data = await response.json();
+  //フィルターボタンを押した時にfilterに引数が渡されてるはず それがなければゼロ
+  //もしstatusesの箱の中に数字があったら見に行く、見に行ってなんか数字入ってたら{}内の処理する
+  //?がなかったらstatusesの中が何にもなかった時にエラーなる
+  if (filterState.statuses?.length) {
+    //もとのデータに対してfilterをかける(filterはメソッド)
+    data.tasks = data.tasks.filter(
+    //taskってのが一個一個のデータの中のまとまりを見ていくメソッド。条件に合えば残す
+      task => filterState.statuses.includes(task.statuscode));
+  }
+  return data;
 }
+//タスクを表示する
+function renderTasks(data){
+  //htmlのtbodyって箱を見つけてきて、それをtbodyって変数にいれてる
+  //getElementByIdじゃない理由は、tbodyっていう特定の場所を呼びだしたいから
+  const tasks = data.tasks
+  const tbody = document.querySelector("#task-table tbody");
+  //trを削除して初期化
+  while (tbody.firstChild) {
+    tbody.removeChild(tbody.firstChild); 
+  }
+  //みつけてきたtbodyの箱の中に新しくテーブルの中の1行を作る
+  data.tasks.forEach(task => {
+    try {
+    const tr = document.createElement("tr");   
+    //中身のセル作っててセルの名前を決めてる
+    const statusTd = document.createElement("td");
+    //htmlの中にまずはセレクトタグを新しく作る
+    const select = document.createElement("select");
+    //さっき作ったselectタグにselectという名前をつけてる
+    select.name = task.id;
+    select.id = task.id;
+    //さらにこのselectタグにCSSクラスをつける(後からいじる時にこれあると便利)
+    select.classList.add("task-status");
+    //ステータスの状況に対応したCSSクラス作成
+    setStatusColorClass(select, task.statuscode);
+    //fetchでとってきたstatuslistの中を開いて、プルダウンの選択肢を作る(未着手とか)
+    data.statuslist.forEach((statuslist) => { 
+      const option = document.createElement("option");
+      option.value = statuslist.code;
+      //ユーザーに表示される文字列を設定
+      option.textContent = statuslist.label;
+      //今の状態とマスタのステータスが一致してるか
+      if (task.statuscode === statuslist.code) {
+        option.setAttribute('selected', '')
+      }
+      //selectのなかにopitionいれて、selectにtdいれてtrにtdいれてるマトリョーシカ方式
+      select.appendChild(option);
+    });
+    statusTd.appendChild(select);
+    //削除ボタン作成(押したときの挙動は別で作る)
+    const deleteTd = document.createElement("td");
+    const deleteBtn = document.createElement("button");
+    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';  // ← アイコン付き
+    //後から呼び出す用のCSSクラス設定&idの情報も紐づけてSQLで処理するときどれを消すのか迷わんようにしてる
+    deleteBtn.classList.add("delete-button");
+    deleteBtn.setAttribute("data-id", task.id);
+    //このボタンが押されたときの挙動を書いてる関数を呼ぶ
+    setDeleteHandler(deleteBtn);
+    //今作ったボタンをdeleteTdの小要素にする
+    deleteTd.appendChild(deleteBtn);
+
+    //tdを表示させたい項目だけ作ろう！
+    const nameTd = document.createElement("td")
+    nameTd.innerText = task.name
+    const deadlineTd = document.createElement("td")
+    deadlineTd.innerText = task.deadline
+    const completed_atTd = document.createElement("td")
+    completed_atTd.innerText = task.completed_at
+    const memoTd = document.createElement("td")
+    memoTd.innerText = task.memo
+    tr.appendChild(statusTd);
+    tr.appendChild(nameTd);
+    tr.appendChild(deadlineTd);
+    tr.appendChild(completed_atTd);
+    tr.appendChild(memoTd);
+    tr.appendChild(deleteTd);
+    tbody.appendChild(tr);
+  }catch(error) {
+    console.error("エラー発生:", error);
+   } //catchの終わり
+  })
+}
+     //renderTasksの終
 //タスクの登録ボタンが押された時に、そのデータをflaskサーバーに送る処理
 //fetchで送る前にその送るための情報を受け取って整える作業がいる
 //task-fornってIDから情報とってきて欲しい、それはsubmitってイベントが発生した時のみ。ページのリロードもしないように設定（じゃないとfetchの処理の途中でロードはいっちゃうから)
@@ -143,7 +147,7 @@ document.getElementById("task-form").addEventListener("submit",function(e){
   .then(response => response.json())
   .then(data => {
     console.log("登録成功",data);//【fetchした後にリロードせずに画面更新する関数を入れましょう】
-    get_tasks();
+    get_tasks().then(renderTasks);
   })
   .catch(error => {
     console.error("登録失敗:",error);
@@ -160,7 +164,7 @@ function handleFilterApply() {
   //配列の中からvalue(ステータスコード)だけを抽出して、statusesって箱に入れてる
   .map(cb => cb.value);
   currentFilter = {statuses: checked };
-  get_tasks(currentFilter);
+  get_tasks(currentFilter).then(renderTasks);
 }
 
 //フィルターの確認ボタンが押された時に関数が走る
@@ -219,7 +223,7 @@ function setDeleteHandler(buttonElement){
     }) //Fetchの終
       .then((res) => {
         if(!res.ok) throw new Error("削除失敗"); //サーバーからのレスがok以外ならエラーだす
-        get_tasks(currentFilter); //サーバーからのレスがyesならタスクを再取得
+        get_tasks(currentFilter).then(renderTasks); //サーバーからのレスがyesならタスクを再取得
       }) //then1の終
     .catch((err) => {
       console.error("削除エラー:", err);
@@ -245,3 +249,22 @@ function setStatusColorClass(select, statuscode){
       select.classList.add("status-completed");
 }
 }
+
+//▼---ソート機能---▼
+//ソートボタンからvalueを取ってくる処理
+function applySort(){
+  const key = document.getElementById("sortKey").value;
+  const order = document.getElementById("sortOrdet").value;
+
+  sortTasks(sortKey, sortOrder); 
+}
+
+//表示されてるタスクにソートをかける機能
+function sortTasks(sortKey, order = 'asc'){
+  //get_tasuks関数を呼んで、そのデータを並べ替える
+  const tasks = get_tasks();
+  //ステータス照準で並び替えられるようにする
+ 
+//ボタンが押された時に処理が走る
+document.getElementById("sortButton").addEventListener("click",sortTasks)
+//▲---ソート機能---▲

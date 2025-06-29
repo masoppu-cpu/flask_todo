@@ -39,13 +39,15 @@ def get_tasks():
             sql = """
                 SELECT * FROM tasks
                 LEFT JOIN statusnumber ON status = code
-                WHERE is_deleted = '0';
+                WHERE is_deleted = '0'
+                ORDER BY completed_at DESC;
             """
         else:
             sql = """
                 SELECT * FROM tasks
                 LEFT JOIN statusnumber ON status = code
-                WHERE is_deleted = '0' AND status IN('00', '01');
+                WHERE is_deleted = '0' AND status IN('00', '01')
+                ORDER BY status ASC, tasks.deadline ASC;
             """
         #取得したデータをリストでまとめる
         cur.execute(sql)
