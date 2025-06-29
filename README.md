@@ -16,6 +16,6 @@ Flaskで作成したタスク管理Webアプリです。
 - タスク一覧をCSV形式でエクスポートする機能
 
 ## スクリーンショット
-![画面](images/タスク管理アプリver01.png)
-![画面](images/タスク管理アプリver03.png)
+![画面](images/image01.png)
+![画面](images/image03.png)
 
